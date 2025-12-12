@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const { isConnected } = useWebSocket();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -22,11 +24,32 @@ const Navbar: React.FC = () => {
           borderRadius: '8px',
         }}></div>
         <span style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Edge<span style={{ color: 'var(--primary)' }}>Dashboard</span>
+          Edge<span style={{ color: 'var(--primary)' }}>Master</span>
         </span>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.25rem 0.75rem',
+          borderRadius: 'var(--radius-md)',
+          background: isConnected ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+          border: `1px solid ${isConnected ? 'var(--success)' : 'var(--danger)'}`,
+          fontSize: '0.75rem',
+        }}>
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: isConnected ? 'var(--success)' : 'var(--danger)',
+            animation: isConnected ? 'pulse 2s infinite' : 'none',
+          }}></div>
+          <span style={{ color: isConnected ? 'var(--success)' : 'var(--danger)' }}>
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </span>
+        </div>
         <Link 
           to="/" 
           className={`btn ${isActive('/') ? 'btn-primary' : 'btn-secondary'}`}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { orderService, Guest, guestService, PosOrder } from '../services/api';
+import { wsService } from '../services/websocket';
 import Modal from '../components/Modal';
 
 const OrderList: React.FC = () => {
@@ -27,6 +28,37 @@ const OrderList: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    // Set up WebSocket listeners for real-time updates
+    const handleOrderCreated = (order: PosOrder) => {
+      setOrders(prev => {
+        // Check if order already exists (avoid duplicates)
+        if (prev.find(o => o._id === order._id)) {
+          return prev;
+        }
+        return [...prev, order];
+      });
+    };
+
+    const handleOrderUpdated = (updatedOrder: PosOrder) => {
+      setOrders(prev =>
+        prev.map(o => o._id === updatedOrder._id ? updatedOrder : o)
+      );
+    };
+
+    const handleOrderDeleted = (orderId: string) => {
+      setOrders(prev => prev.filter(o => o._id !== orderId));
+    };
+
+    wsService.on('order:created', handleOrderCreated);
+    wsService.on('order:updated', handleOrderUpdated);
+    wsService.on('order:deleted', handleOrderDeleted);
+
+    return () => {
+      wsService.off('order:created', handleOrderCreated);
+      wsService.off('order:updated', handleOrderUpdated);
+      wsService.off('order:deleted', handleOrderDeleted);
+    };
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {

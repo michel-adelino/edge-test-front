@@ -37,12 +37,16 @@ export const guestService = {
     const response = await api.get<Guest[]>('/guests');
     return response.data;
   },
-  create: async (gym: Guest) => {
-    const response = await api.post<Guest>('/guests', gym);
+  getById: async (id: string) => {
+    const response = await api.get<Guest>(`/guests/${id}`);
     return response.data;
   },
-  update: async (id: string, gym: Partial<Guest>) => {
-    const response = await api.put<Guest>(`/guests/${id}`, gym);
+  create: async (guest: Guest) => {
+    const response = await api.post<Guest>('/guests', guest);
+    return response.data;
+  },
+  update: async (id: string, guest: Partial<Guest>) => {
+    const response = await api.put<Guest>(`/guests/${id}`, guest);
     return response.data;
   },
   delete: async (id: string) => {
@@ -53,6 +57,10 @@ export const guestService = {
 export const orderService = {
   getAll: async () => {
     const response = await api.get<PosOrder[]>('/orders');
+    return response.data;
+  },
+  getById: async (id: string) => {
+    const response = await api.get<PosOrder>(`/orders/${id}`);
     return response.data;
   },
   create: async (order: PosOrder) => {

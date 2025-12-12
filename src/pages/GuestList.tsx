@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { guestService, Guest } from '../services/api';
+import { wsService } from '../services/websocket';
 import Modal from '../components/Modal';
 
 const GuestList: React.FC = () => {
@@ -22,6 +23,37 @@ const GuestList: React.FC = () => {
 
   useEffect(() => {
     fetchGuests();
+
+    // Set up WebSocket listeners for real-time updates
+    const handleGuestCreated = (guest: Guest) => {
+      setGuests(prev => {
+        // Check if guest already exists (avoid duplicates)
+        if (prev.find(g => g._id === guest._id)) {
+          return prev;
+        }
+        return [...prev, guest];
+      });
+    };
+
+    const handleGuestUpdated = (updatedGuest: Guest) => {
+      setGuests(prev =>
+        prev.map(g => g._id === updatedGuest._id ? updatedGuest : g)
+      );
+    };
+
+    const handleGuestDeleted = (guestId: string) => {
+      setGuests(prev => prev.filter(g => g._id !== guestId));
+    };
+
+    wsService.on('guest:created', handleGuestCreated);
+    wsService.on('guest:updated', handleGuestUpdated);
+    wsService.on('guest:deleted', handleGuestDeleted);
+
+    return () => {
+      wsService.off('guest:created', handleGuestCreated);
+      wsService.off('guest:updated', handleGuestUpdated);
+      wsService.off('guest:deleted', handleGuestDeleted);
+    };
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
