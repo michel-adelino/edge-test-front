@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
+import BackendStatus from './BackendStatus';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -29,6 +30,7 @@ const Navbar: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+        <BackendStatus />
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -47,7 +49,7 @@ const Navbar: React.FC = () => {
             animation: isConnected ? 'pulse 2s infinite' : 'none',
           }}></div>
           <span style={{ color: isConnected ? 'var(--success)' : 'var(--danger)' }}>
-            {isConnected ? 'Connected' : 'Disconnected'}
+            WS {isConnected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
         <Link 

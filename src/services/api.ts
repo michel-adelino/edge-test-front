@@ -30,7 +30,27 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
+
+// Add response interceptor for better error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ECONNABORTED') {
+      error.message = 'Request timeout - server is not responding';
+    } else if (error.code === 'ERR_NETWORK') {
+      error.message = 'Network error - cannot reach server. Is the backend running?';
+    } else if (error.response) {
+      // Server responded with error status
+      error.message = error.response.data?.error || error.response.statusText || 'Server error';
+    } else if (error.request) {
+      // Request made but no response
+      error.message = 'No response from server. Is the backend running?';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const guestService = {
   getAll: async () => {
@@ -73,6 +93,31 @@ export const orderService = {
   },
   delete: async (id: string) => {
     await api.delete(`/orders/${id}`);
+  },
+};
+
+export interface BackendStatus {
+  server: string;
+  database: {
+    status: string;
+    readyState: number;
+    connected: boolean;
+    error: string | null;
+  };
+  atlas: {
+    configured: boolean;
+    status: string;
+    readyState: number | null;
+    connected: boolean;
+    error: string | null;
+  };
+  timestamp: string;
+}
+
+export const statusService = {
+  getStatus: async (): Promise<BackendStatus> => {
+    const response = await api.get<BackendStatus>('/status');
+    return response.data;
   },
 };
 

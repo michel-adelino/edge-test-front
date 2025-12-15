@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { Guest, PosOrder } from './api';
+import type { Guest, PosOrder } from './api';
 
 const WS_URL = 'http://localhost:5000';
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { orderService, Guest, guestService, PosOrder } from '../services/api';
+import { orderService, type Guest, guestService, type PosOrder } from '../services/api';
 import { wsService } from '../services/websocket';
 import Modal from '../components/Modal';
 
@@ -9,18 +9,30 @@ const OrderList: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Partial<PosOrder>>({ items: [] });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [orderData, guestData] = await Promise.all([
         orderService.getAll(),
         guestService.getAll()
       ]);
-      setOrders(orderData);
-      setGuests(guestData);
-    } catch (error) {
-      console.error(error);
+      console.log('Fetched orders:', orderData);
+      console.log('Fetched guests:', guestData);
+      setOrders(Array.isArray(orderData) ? orderData : []);
+      setGuests(Array.isArray(guestData) ? guestData : []);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to fetch orders';
+      setError(errorMessage);
+      console.error('Error fetching orders:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
     } finally {
       setLoading(false);
     }
@@ -143,6 +155,21 @@ const OrderList: React.FC = () => {
       <div className="card table-container">
         {loading ? (
           <div style={{ padding: 'var(--spacing-xl)', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
+        ) : error ? (
+          <div style={{ 
+            padding: 'var(--spacing-xl)', 
+            textAlign: 'center', 
+            color: 'var(--danger)',
+            background: 'rgba(239, 68, 68, 0.1)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--danger)',
+            margin: 'var(--spacing-md)'
+          }}>
+            <div style={{ marginBottom: 'var(--spacing-md)' }}>⚠️ {error}</div>
+            <button className="btn btn-primary" onClick={fetchOrders}>
+              Retry
+            </button>
+          </div>
         ) : (
           <table>
             <thead>
@@ -193,10 +220,13 @@ const OrderList: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {orders.length === 0 && (
+              {orders.length === 0 && !loading && (
                 <tr>
                    <td colSpan={6} style={{ textAlign: 'center', padding: 'var(--spacing-xl)', color: 'var(--text-muted)' }}>
-                    No orders found.
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                      <div>📦 No orders found in database.</div>
+                      <div style={{ fontSize: '0.85rem' }}>Click "New Order" to create your first order.</div>
+                    </div>
                   </td>
                 </tr>
               )}

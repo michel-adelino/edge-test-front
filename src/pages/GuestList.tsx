@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { guestService, Guest } from '../services/api';
+import { guestService, type Guest } from '../services/api';
 import { wsService } from '../services/websocket';
 import Modal from '../components/Modal';
 
@@ -8,14 +8,25 @@ const GuestList: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentGuest, setCurrentGuest] = useState<Partial<Guest>>({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchGuests = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await guestService.getAll();
-      setGuests(data);
-    } catch (error) {
-      console.error(error);
+      console.log('Fetched guests:', data);
+      setGuests(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to fetch guests';
+      setError(errorMessage);
+      console.error('Error fetching guests:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
     } finally {
       setLoading(false);
     }
@@ -106,6 +117,21 @@ const GuestList: React.FC = () => {
       <div className="card table-container">
         {loading ? (
           <div style={{ padding: 'var(--spacing-xl)', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
+        ) : error ? (
+          <div style={{ 
+            padding: 'var(--spacing-xl)', 
+            textAlign: 'center', 
+            color: 'var(--danger)',
+            background: 'rgba(239, 68, 68, 0.1)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--danger)',
+            margin: 'var(--spacing-md)'
+          }}>
+            <div style={{ marginBottom: 'var(--spacing-md)' }}>⚠️ {error}</div>
+            <button className="btn btn-primary" onClick={fetchGuests}>
+              Retry
+            </button>
+          </div>
         ) : (
           <table>
             <thead>
@@ -138,10 +164,13 @@ const GuestList: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {guests.length === 0 && (
+              {guests.length === 0 && !loading && (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: 'var(--spacing-xl)', color: 'var(--text-muted)' }}>
-                    No guests found. Add one to get started.
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                      <div>📭 No guests found in database.</div>
+                      <div style={{ fontSize: '0.85rem' }}>Click "Add Guest" to create your first guest.</div>
+                    </div>
                   </td>
                 </tr>
               )}
