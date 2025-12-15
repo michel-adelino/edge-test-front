@@ -54,6 +54,11 @@ class WebSocketService {
     this.socket.on('order:deleted', (data: { _id: string }) => {
       this.emit('order:deleted', data._id);
     });
+
+    // Sync status events
+    this.socket.on('sync:status', (status: any) => {
+      this.emit('sync:status', status);
+    });
   }
 
   disconnect() {
